@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OnSpot Call Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh}
+.header{padding:24px 32px 0;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:18px;font-weight:600;letter-spacing:-0.3px}
+.logo span{color:#888;font-weight:400}
+.badge{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:500}
+.badge.off{background:#fce8e8;color:#c0392b}
+.badge.on{background:#e8f5ee;color:#1a7a45}
+.config{background:#fff;border:1px solid #e5e5e3;border-radius:12px;margin:20px 32px;padding:20px 24px}
+.config h2{font-size:13px;font-weight:500;margin-bottom:14px;color:#666;text-transform:uppercase;letter-spacing:0.5px}
+.fields{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end}
+.field label{display:block;font-size:12px;color:#666;margin-bottom:5px}
+.field input,.field select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fafafa;color:#1a1a18;font-size:13px;font-family:inherit}
+.field input:focus,.field select:focus{outline:2px solid #378ADD;border-color:transparent}
+.full{grid-column:1/-1}
+.btn{padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary{background:#1a1a18;color:#fff}
+.btn-primary:hover{background:#333}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.toggle-token{font-size:12px;color:#378ADD;cursor:pointer;background:none;border:none;padding:0;margin-top:4px;font-family:inherit}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:0 32px 20px}
+.metric{background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:20px 22px}
+.metric-label{font-size:12px;color:#888;margin-bottom:8px}
+.metric-value{font-size:28px;font-weight:600;letter-spacing:-0.5px;line-height:1}
+.metric-sub{font-size:12px;color:#888;margin-top:6px}
+.blue .metric-value{color:#378ADD}
+.teal .metric-value{color:#1D9E75}
+.amber .metric-value{color:#BA7517}
+.coral .metric-value{color:#D85A30}
+.table-wrap{background:#fff;border:1px solid #e5e5e3;border-radius:12px;margin:0 32px 32px;overflow:hidden}
+.table-header{padding:16px 22px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+.table-header h3{font-size:14px;font-weight:500}
+.count{font-size:12px;color:#888}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:500;color:#888;text-align:left;padding:10px 22px;border-bottom:1px solid #eee;text-transform:uppercase;letter-spacing:0.5px}
+td{font-size:13px;padding:12px 22px;border-bottom:1px solid #f0f0ee}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.agent-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:99px;font-size:12px;font-weight:500;background:#f0f0ee;color:#333}
+.dir{font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500}
+.in{background:#e8f0fb;color:#1a5fa8}
+.out{background:#f0f0ee;color:#666}
+.dur{font-variant-numeric:tabular-nums;font-family:monospace;font-size:12px}
+.tag-pill{font-size:11px;padding:2px 6px;border-radius:4px;background:#f0f0ee;color:#666;margin-right:3px}
+.empty{padding:48px;text-align:center;color:#888;font-size:14px}
+.loading-msg{padding:48px;text-align:center;color:#888;font-size:14px}
+.error-box{background:#fce8e8;color:#c0392b;border-radius:8px;padding:10px 14px;margin:0 32px 16px;font-size:13px}
+.note{background:#fff8e8;border:1px solid #f0d080;border-radius:8px;padding:12px 16px;margin:0 32px 16px;font-size:12px;color:#7a5800;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">OnSpot <span>/ Call Tracker</span></div>
+  <span class="badge off" id="status-badge">Non connecté</span>
+</div>
+
+<div style="margin:16px 32px 0">
+  <div class="note">
+    ⚠️ <strong>Comment obtenir ton token :</strong> Ouvre RingOver → F12 → Network → Fetch/XHR → filtre "calls" → clique sur une requête → Headers → copie la valeur après "Bearer " dans Authorization. Le token expire après quelques heures.
+  </div>
+</div>
+
+<div class="config">
+  <h2>Configuration</h2>
+  <div class="fields">
+    <div class="field full">
+      <label>Token Bearer RingOver</label>
+      <input type="password" id="token" placeholder="eyJ0eXAiOiJKV1Qi..." />
+      <button class="toggle-token" onclick="toggleToken()">Afficher</button>
+    </div>
+    <div class="field">
+      <label>Date début</label>
+      <input type="date" id="start-date" />
+    </div>
+    <div class="field">
+      <label>Date fin</label>
+      <input type="date" id="end-date" />
+    </div>
+    <div class="field">
+      <label>Nombre d'appels</label>
+      <select id="limit">
+        <option value="50">50</option>
+        <option value="100" selected>100</option>
+        <option value="200">200</option>
+        <option value="500">500</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="fetch-btn" onclick="fetchCalls()">
+      <i class="ti ti-refresh"></i> Charger
+    </button>
+  </div>
+</div>
+
+<div id="error-container"></div>
+
+<div class="metrics">
+  <div class="metric blue">
+    <div class="metric-label">Total appels</div>
+    <div class="metric-value" id="m-total">—</div>
+    <div class="metric-sub" id="m-answered">en attente</div>
+  </div>
+  <div class="metric teal">
+    <div class="metric-label">Durée moy. conversation</div>
+    <div class="metric-value" id="m-avg-dur">—</div>
+    <div class="metric-sub">Temps en ligne</div>
+  </div>
+  <div class="metric amber">
+    <div class="metric-label">Durée moy. totale</div>
+    <div class="metric-value" id="m-avg-total">—</div>
+    <div class="metric-sub">Avec attente</div>
+  </div>
+  <div class="metric coral">
+    <div class="metric-label">Appels manqués</div>
+    <div class="metric-value" id="m-missed">—</div>
+    <div class="metric-sub" id="m-missed-pct">en attente</div>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <div class="table-header">
+    <h3>Journal des appels</h3>
+    <span class="count" id="table-count"></span>
+  </div>
+  <div id="table-container">
+    <div class="empty">Entre ton token et clique sur <strong>Charger</strong> pour voir les appels.</div>
+  </div>
+</div>
+
+<script>
+function toggleToken() {
+  const inp = document.getElementById('token');
+  const btn = document.querySelector('.toggle-token');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'Masquer'; }
+  else { inp.type = 'password'; btn.textContent = 'Afficher'; }
+}
+
+function setDates() {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  document.getElementById('start-date').value = first.toISOString().split('T')[0];
+  document.getElementById('end-date').value = now.toISOString().split('T')[0];
+}
+
+function fmtDur(s) {
+  if (!s || s === 0) return '0s';
+  const m = Math.floor(s / 60), sec = s % 60;
+  return m > 0 ? m + 'min ' + sec + 's' : sec + 's';
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit'}) + ' ' +
+    d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+}
+
+function showError(msg) {
+  document.getElementById('error-container').innerHTML = '<div class="error-box">⚠️ ' + msg + '</div>';
+}
+
+function clearError() { document.getElementById('error-container').innerHTML = ''; }
+
+function updateMetrics(calls) {
+  const answered = calls.filter(c => c.is_answered || c.call_answered_time);
+  const missed = calls.filter(c => !c.is_answered && !c.call_answered_time);
+  const inCallDurs = answered.map(c => c.in_call_duration || 0).filter(d => d > 0);
+  const totalDurs = calls.map(c => c.total_duration || 0).filter(d => d > 0);
+  const avgIn = inCallDurs.length ? Math.round(inCallDurs.reduce((a,b)=>a+b,0)/inCallDurs.length) : 0;
+  const avgTotal = totalDurs.length ? Math.round(totalDurs.reduce((a,b)=>a+b,0)/totalDurs.length) : 0;
+
+  document.getElementById('m-total').textContent = calls.length;
+  document.getElementById('m-answered').textContent = answered.length + ' décrochés';
+  document.getElementById('m-avg-dur').textContent = fmtDur(avgIn);
+  document.getElementById('m-avg-total').textContent = fmtDur(avgTotal);
+  document.getElementById('m-missed').textContent = missed.length;
+  document.getElementById('m-missed-pct').textContent = calls.length ? Math.round(missed.length/calls.length*100) + '% du total' : '—';
+}
+
+function renderTable(calls) {
+  if (!calls.length) {
+    document.getElementById('table-container').innerHTML = '<div class="empty">Aucun appel trouvé pour cette période.</div>';
+    return;
+  }
+  document.getElementById('table-count').textContent = calls.length + ' appels';
+  let html = '<table><thead><tr><th>Date</th><th>Agent</th><th>Numéro</th><th>Direction</th><th>Durée conv.</th><th>Durée totale</th><th>Tags</th></tr></thead><tbody>';
+  calls.forEach(c => {
+    const dirClass = (c.direction||'').toLowerCase().includes('inbound') ? 'in' : 'out';
+    const dirLabel = dirClass === 'in' ? 'Entrant' : 'Sortant';
+    const tags = (c.tags||[]).map(t => '<span class="tag-pill">'+(t.tag_label||t.label||t)+'</span>').join('');
+    const agent = c.user_name || c.user_id || '—';
+    const num = c.bnumber || c.anumber || '—';
+    html += `<tr>
+      <td>${fmtTime(c.call_start_time)}</td>
+      <td><span class="agent-pill">${agent}</span></td>
+      <td class="dur">${num}</td>
+      <td><span class="dir ${dirClass}">${dirLabel}</span></td>
+      <td class="dur">${fmtDur(c.in_call_duration)}</td>
+      <td class="dur">${fmtDur(c.total_duration)}</td>
+      <td>${tags}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('table-container').innerHTML = html;
+}
+
+async function fetchCalls() {
+  const token = document.getElementById('token').value.trim();
+  const startDate = document.getElementById('start-date').value;
+  const endDate = document.getElementById('end-date').value;
+  const limit = parseInt(document.getElementById('limit').value);
+
+  if (!token) { showError('Entre ton token Bearer.'); return; }
+  if (!startDate || !endDate) { showError('Sélectionne une période.'); return; }
+
+  clearError();
+  const btn = document.getElementById('fetch-btn');
+  btn.disabled = true;
+  btn.innerHTML = 'Chargement...';
+  document.getElementById('table-container').innerHTML = '<div class="loading-msg">Connexion à RingOver...</div>';
+
+  try {
+    const res = await fetch('https://api-us.ringover.com/v4/aud/dashboard/logs/calls', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        filter: "ALL",
+        start_date: new Date(startDate).toISOString(),
+        end_date: new Date(endDate + 'T23:59:59').toISOString(),
+        limit_count: limit,
+        limit_offset: 0,
+        handle_call: "all",
+        users: [],
+        tags: [],
+        alpha2_codes: [],
+        accounts: [],
+        call_type: [],
+        channels: [],
+        groups: [],
+        ivrs: [],
+        notes: [],
+        numbers: [],
+        scenarios: [],
+        stars: [],
+        handle_call_response_type: ["CALL", "SMS", "EMAIL"]
+      })
+    });
+
+    if (res.status === 401) {
+      showError('Token expiré ou invalide. Récupère un nouveau token depuis DevTools.');
+      return;
+    }
+    if (!res.ok) {
+      showError('Erreur API RingOver : ' + res.status + ' ' + res.statusText);
+      return;
+    }
+
+    const data = await res.json();
+    console.log('RingOver response:', data);
+    const calls = data.call_list || data.calls || data.data || (Array.isArray(data) ? data : []);
+
+    if (!Array.isArray(calls)) {
+      showError('Format de réponse inattendu. Ouvre la console (F12) pour voir la réponse brute.');
+      return;
+    }
+
+    document.getElementById('status-badge').textContent = '✓ Connecté';
+    document.getElementById('status-badge').className = 'badge on';
+    updateMetrics(calls);
+    renderTable(calls);
+
+  } catch(e) {
+    if (e.message.includes('CORS') || e.message.includes('fetch')) {
+      showError('Erreur CORS : l\'API RingOver bloque les appels depuis une autre origine. Il faut un proxy Vercel. Contacte-moi pour la prochaine étape.');
+    } else {
+      showError('Erreur : ' + e.message);
+    }
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-refresh"></i> Charger';
+  }
+}
+
+setDates();
+</script>
+</body>
+</html>
