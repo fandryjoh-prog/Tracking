@@ -228,7 +228,7 @@ async function fetchCalls() {
   document.getElementById('table-container').innerHTML = '<div class="loading-msg">Connexion à RingOver...</div>';
 
   try {
-    const res = await fetch('https:///api/ringover/v4/aud/dashboard/logs/calls', {
+    const res = await fetch('https:////api/ringover/aud/dashboard/logs/calls', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
